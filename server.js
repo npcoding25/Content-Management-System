@@ -37,9 +37,6 @@ const db = new Database({
 
 async function main() {
 
-    // const employees = await db.query('SELECT employees.first_name, employees.last_name, roles.title, roles.salary FROM employees, roles WHERE employees.role_id = roles.role_id')
-    // console.table(employees)
-
     menuOptions = await inquirer.prompt([
         {
             name: 'options',
@@ -60,6 +57,8 @@ async function main() {
         ])
 
         await db.query('INSERT INTO departments (department) VALUES (?)', [promptAnswers.department])
+
+        console.log(`\n Added the new department called: ${promptAnswers.department} \n`)
     }
 
 
@@ -82,10 +81,12 @@ async function main() {
                 choices: showDepartments.map(departments => departments.department)
             }
         ])
-        const result = await db.query('SELECT department_id FROM departments WHERE department = ?', [promptAnswers.department])
-        console.log(result[0].department_id)
+        const departmentId = await db.query('SELECT department_id FROM departments WHERE department = ?', [promptAnswers.department])
 
-        await db.query('INSERT INTO roles (title, salary, department_id) VALUES (?,?,?)', [promptAnswers.role, promptAnswers.salary, result[0].department_id])
+
+        await db.query('INSERT INTO roles (title, salary, department_id) VALUES (?,?,?)', [promptAnswers.role, promptAnswers.salary, departmentId[0].department_id])
+
+        console.log(`\n Added the new role with these values: \n Role name: ${promptAnswers.role} \n Salary: ${promptAnswers.salary} \n Department: ${promptAnswers.department} \n`)
     }
 
 
@@ -118,8 +119,12 @@ async function main() {
 
         const roleId = await db.query('SELECT role_id FROM roles WHERE title = ?', [promptAnswers.role])
         const managerId = await db.query('SELECT manager_id FROM managers WHERE first_name = ?', [promptAnswers.manager])
+
         await db.query( 
-            'INSERT INTO employees (first_name, last_name, role_id, manager_id) VALUES (?,?,?,?)', [promptAnswers.firstName, promptAnswers.lastName, roleId[0].role_id, managerId[0].manager_id])
+            'INSERT INTO employees (first_name, last_name, role_id, manager_id) VALUES (?,?,?,?)', [promptAnswers.firstName, promptAnswers.lastName, roleId[0].role_id, managerId[0].manager_id]
+        )
+
+        console.log(`\n Added ${promptAnswers.firstName} ${promptAnswers.lastName} to employee list. \n`)
     }
 
 
@@ -149,7 +154,7 @@ async function main() {
     if(choice == "Update employee role") {
         const showRoles = await db.query('SELECT title FROM roles ')
         const showEmployees = await db.query('SELECT first_name FROM employees')
-        console.log(showEmployees)
+
         promptAnswers = await inquirer.prompt([
             {
                 name: 'employeeName',
@@ -167,6 +172,8 @@ async function main() {
         const roleId = await db.query('SELECT role_id FROM roles WHERE title = ?', [promptAnswers.role])
 
         await db.query('UPDATE employees SET role_id = ? WHERE first_name = ?', [roleId[0].role_id, promptAnswers.employeeName])
+
+        console.log(`\n Updated ${promptAnswers.employeeName}'s role to ${promptAnswers.role}. \n`)
     }
     main()
 }
