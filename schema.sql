@@ -22,7 +22,7 @@ CREATE TABLE roles(
 
 CREATE TABLE departments(
 	department_id INTEGER PRIMARY KEY AUTO_INCREMENT,
-	title VARCHAR(50)
+	department VARCHAR(50)
 );
 
 CREATE TABLE managers(
