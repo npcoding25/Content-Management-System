@@ -1,5 +1,6 @@
 const mysql = require('mysql')
 const inquirer = require('inquirer')
+require('dotenv').config()
 require('console.table')
 // const console.table = require('console.table')
 class Database {
@@ -31,22 +32,24 @@ const db = new Database({
     host: "localhost",
     port: 3306,
     user: "root",
-    password: "<Nathan95>",
+    password: process.env.DB_PASSWORD,
     database: "dbEmployees"
 });
 
 async function main() {
 
+    // Main menu selection for different options
     menuOptions = await inquirer.prompt([
         {
             name: 'options',
             type: 'list',
             message: 'What would you like to do?',
-            choices: [ "Add a department", "Add a role", "Add an employee", "View departments", "View roles", "View employees", "Update employee role" ]
+            choices: [ "Add a department", "Add a role", "Add an employee", "View departments", "View roles", "View employees", "Update employee role", "Fire employee", "Remove role", "Remove department" ]
         }
     ])
     choice = menuOptions.options
 
+    // Each 'if' statement is the logic for the list of choices above
 
     if(choice == "Add a department") {
         promptAnswers = await inquirer.prompt([
@@ -56,11 +59,12 @@ async function main() {
             }
         ])
 
+        // Inserting new department into database
         await db.query('INSERT INTO departments (department) VALUES (?)', [promptAnswers.department])
 
+        // Feedback to user
         console.log(`\n Added the new department called: ${promptAnswers.department} \n`)
     }
-
 
     if(choice == "Add a role") {
         const showDepartments = await db.query('SELECT department FROM departments')
@@ -81,16 +85,19 @@ async function main() {
                 choices: showDepartments.map(departments => departments.department)
             }
         ])
+        // Getting correct department id from database 
         const departmentId = await db.query('SELECT department_id FROM departments WHERE department = ?', [promptAnswers.department])
 
-
+        // Inserting new role into database
         await db.query('INSERT INTO roles (title, salary, department_id) VALUES (?,?,?)', [promptAnswers.role, promptAnswers.salary, departmentId[0].department_id])
 
+        // Feedback to user
         console.log(`\n Added the new role with these values: \n Role name: ${promptAnswers.role} \n Salary: ${promptAnswers.salary} \n Department: ${promptAnswers.department} \n`)
     }
 
-
     if(choice == "Add an employee") {
+
+        // Selecting manager names and role titles from database for the user to make a choice
         const showManagers = await db.query('SELECT first_name, last_name FROM managers')
         const showRoles = await db.query('SELECT title FROM roles ')
 
@@ -117,41 +124,47 @@ async function main() {
             },
         ])
 
+        // Getting correct role id and manager id from database
         const roleId = await db.query('SELECT role_id FROM roles WHERE title = ?', [promptAnswers.role])
         const managerId = await db.query('SELECT manager_id FROM managers WHERE first_name = ?', [promptAnswers.manager])
 
+        // Inserting new employee into database
         await db.query( 
             'INSERT INTO employees (first_name, last_name, role_id, manager_id) VALUES (?,?,?,?)', [promptAnswers.firstName, promptAnswers.lastName, roleId[0].role_id, managerId[0].manager_id]
         )
-
+        
+        // Feedback to user
         console.log(`\n Added ${promptAnswers.firstName} ${promptAnswers.lastName} to employee list. \n`)
     }
-
-
+    
     if(choice == "View departments") {
+
+        // Getting all departments from database to show user
         const showDepartments = await db.query('SELECT department FROM departments')
         console.table(showDepartments)
     }
 
-
     if(choice == "View roles") {
+
+        // Getting role info and the departments they belongs in for all roles to show user
         const showRoles = await db.query(
-            'SELECT roles.title, roles.salary, departments.department FROM roles, departments WHERE roles.department_id = departments.department_id'
+            'SELECT roles.title, roles.salary, departments.department FROM roles, departments WHERE roles.department_id = departments.department_id ORDER BY departments.department'
             )
         console.table(showRoles)
     }
 
-
     if(choice == "View employees") {
+
+        // Getting all employees with their role info to show user
         const showEmployees = await db.query(
-            'SELECT employees.first_name, employees.last_name, roles.title, roles.salary FROM employees, roles WHERE employees.role_id = roles.role_id'
+            'SELECT employees.first_name, employees.last_name, roles.title, roles.salary FROM employees, roles WHERE employees.role_id = roles.role_id ORDER BY roles.title'
             )
-      
         console.table(showEmployees)
     }
 
-
     if(choice == "Update employee role") {
+
+        // Getting roles and employees for user selection
         const showRoles = await db.query('SELECT title FROM roles ')
         const showEmployees = await db.query('SELECT first_name FROM employees')
 
@@ -169,11 +182,107 @@ async function main() {
                 choices: showRoles.map(roles => roles.title)
             }
         ])
+
+        // Getting correct role id from database
         const roleId = await db.query('SELECT role_id FROM roles WHERE title = ?', [promptAnswers.role])
 
+        // Updating role in employee
         await db.query('UPDATE employees SET role_id = ? WHERE first_name = ?', [roleId[0].role_id, promptAnswers.employeeName])
 
+        // Feedback to user
         console.log(`\n Updated ${promptAnswers.employeeName}'s role to ${promptAnswers.role}. \n`)
+    }
+
+    if(choice == "Fire employee") {
+
+        // Getting employee names for user selection
+        const showEmployees = await db.query('SELECT first_name FROM employees')
+
+        promptAnswers = await inquirer.prompt([
+            {
+                name: 'employee',
+                type: 'list',
+                message: 'Which employee would you like to fire?',
+                choices: showEmployees.map(employees => employees.first_name)
+            }
+        ])
+
+        // Deleting selected employee from database
+        await db.query('DELETE FROM employees WHERE first_name = ?', [promptAnswers.employee])
+
+        // Feedback to user
+        console.log(`\n You have just fired ${promptAnswers.employee}. I hope you feel good about yourself. \n`)
+    }
+
+    if(choice == "Remove role") {
+
+        // Getting employee names for user selection
+        const showRoles = await db.query('SELECT title FROM roles ')
+
+        promptAnswers = await inquirer.prompt([
+            {
+                name: 'role',
+                type: 'list',
+                message: 'What role are you removing?',
+                choices: showRoles.map(roles => roles.title)
+            }
+        ])
+        role = promptAnswers.role
+
+        // Deleting role from database
+        await db.query('DELETE FROM roles WHERE title = ?', [role])
+
+        // Feedback to user
+        console.log(`\n Removed role: ${role}. \n`)
+
+
+        // const removeRoleId = await db.query('SELECT role_id FROM roles WHERE title = ?', [promptAnswers.role])
+        // await db.query('SELECT first_name FROM employees WHERE employees.role_id = ?', [removeRoleId[0].role_id])
+        //     // console.log(employee[0].first_name)
+        //     
+        //         changeRoles = await inquirer.prompt([
+        //             {
+        //                 name: 'role',
+        //                 type: 'list',
+        //                 message: `What role are you assigning ${employee[0].first_name}?`,
+        //                 choices: showRoles.map(roles => roles.title)
+        //             }
+        //         ])
+        //         const addingRoleId = await db.query('SELECT role_id FROM roles WHERE title = ?', [changeRoles.role])
+        
+        //         const updating = await db.query('UPDATE employees SET role_id = ? WHERE first_name = ?', [addingRoleId[0].role_id, employee[0].first_name])
+        //         console.log(updating)
+        
+        
+        //         // Deleting selected role from database
+        //         await db.query('DELETE FROM roles WHERE title = ?', [role])
+    
+        //     
+    
+        //     //Feedback to user
+        //     console.log(`\n Removed role: ${role}. Make sure you update employee role`)
+        // }
+    }   
+    
+    if(choice == "Remove department") {
+
+        // Getting department names for user selection
+        const showDepartments = await db.query('SELECT department FROM departments')
+
+        promptAnswers = await inquirer.prompt([
+            {
+                name: 'department',
+                type: 'list',
+                message: 'Which department do you want to remove?',
+                choices: showDepartments.map(department => department.department)
+            }
+        ])
+
+        // Deleting selected department from database
+        await db.query('DELETE FROM departments WHERE department = ?', [promptAnswers.department])
+
+        // Feedback to user
+        console.log(`\n Removed department: ${promptAnswers.department} \n`)
     }
     main()
 }
