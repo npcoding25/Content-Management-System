@@ -44,7 +44,7 @@ async function main() {
             name: 'options',
             type: 'list',
             message: 'What would you like to do?',
-            choices: [ "Add a department", "Add a role", "Add an employee", "View departments", "View roles", "View employees", "Update employee role", "Fire employee", "Remove role", "Remove department" ]
+            choices: [ "Add a department", "Add a role", "Add an employee", "View departments", "View roles", "View employees", "Update employee role", "Remove employee", "Remove role", "Remove department" ]
         }
     ])
     choice = menuOptions.options
@@ -193,7 +193,7 @@ async function main() {
         console.log(`\n Updated ${promptAnswers.employeeName}'s role to ${promptAnswers.role}. \n`)
     }
 
-    if(choice == "Fire employee") {
+    if(choice == "Remove employee") {
 
         // Getting employee names for user selection
         const showEmployees = await db.query('SELECT first_name FROM employees')
@@ -202,7 +202,7 @@ async function main() {
             {
                 name: 'employee',
                 type: 'list',
-                message: 'Which employee would you like to fire?',
+                message: 'Which employee would you like to remove?',
                 choices: showEmployees.map(employees => employees.first_name)
             }
         ])
@@ -235,33 +235,6 @@ async function main() {
         // Feedback to user
         console.log(`\n Removed role: ${role}. \n`)
 
-
-        // const removeRoleId = await db.query('SELECT role_id FROM roles WHERE title = ?', [promptAnswers.role])
-        // await db.query('SELECT first_name FROM employees WHERE employees.role_id = ?', [removeRoleId[0].role_id])
-        //     // console.log(employee[0].first_name)
-        //     
-        //         changeRoles = await inquirer.prompt([
-        //             {
-        //                 name: 'role',
-        //                 type: 'list',
-        //                 message: `What role are you assigning ${employee[0].first_name}?`,
-        //                 choices: showRoles.map(roles => roles.title)
-        //             }
-        //         ])
-        //         const addingRoleId = await db.query('SELECT role_id FROM roles WHERE title = ?', [changeRoles.role])
-        
-        //         const updating = await db.query('UPDATE employees SET role_id = ? WHERE first_name = ?', [addingRoleId[0].role_id, employee[0].first_name])
-        //         console.log(updating)
-        
-        
-        //         // Deleting selected role from database
-        //         await db.query('DELETE FROM roles WHERE title = ?', [role])
-    
-        //     
-    
-        //     //Feedback to user
-        //     console.log(`\n Removed role: ${role}. Make sure you update employee role`)
-        // }
     }   
     
     if(choice == "Remove department") {
