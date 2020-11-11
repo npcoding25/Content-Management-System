@@ -92,7 +92,7 @@ async function main() {
         await db.query('INSERT INTO roles (title, salary, department_id) VALUES (?,?,?)', [promptAnswers.role, promptAnswers.salary, departmentId[0].department_id])
 
         // Feedback to user
-        console.log(`\n Added the new role with these values: \n Role name: ${promptAnswers.role} \n Salary: ${promptAnswers.salary} \n Department: ${promptAnswers.department} \n`)
+        console.log(`\n Added the new role with these properties: \n Role name: ${promptAnswers.role} \n Salary: ${promptAnswers.salary} \n Department: ${promptAnswers.department} \n`)
     }
 
     if(choice == "Add an employee") {
@@ -108,7 +108,7 @@ async function main() {
             },
             {
                 name: 'lastName',
-                message: "What is the employee's last name"
+                message: "What is the employee's last name?"
             },
             {
                 name: 'role',
